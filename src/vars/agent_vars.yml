@@ -1,6 +1,6 @@
 ---
-az_devops_accountname: jcabot@magaya.com
-az_devops_accesstoken: 4si2ow55b5yhlxzqqxdedciehngzakekkk57k53icjl4srsoumhq
+az_devops_accountname: {{az_account}}
+az_devops_accesstoken: {{token}}
 az_devops_agent_url: "https://vstsagentpackage.azureedge.net/agent/2.153.1/vsts-agent-win-x64-2.153.1.zip"
 az_devops_project_name: "Magaya Core Project"
 az_devops_agent_folder: "azagent"
