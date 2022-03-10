@@ -18,7 +18,7 @@ ansible_password=""
 
 [virtual_clients:vars]
 ansible_user="administrator"
-ansible_password=M@g@y@202$
+ansible_password=""
 
 
 [global_winrm_config:children]
