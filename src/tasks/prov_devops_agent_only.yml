@@ -1,0 +1,54 @@
+- name: Include vm env var
+  include_vars:
+    file: "vars/agent_vars.yml"
+
+# - name: Printing the environment​ variable in Ansible
+#   debug:
+#     msg: "{{ansible_env}}"
+
+- name: Check agent folder exists
+  win_stat:
+    path: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}\\{{az_devops_folder_agent_code}}\\"
+  register: old_agent_folder
+
+- name: Deattach old deploygroup
+  win_command: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}\\{{az_devops_folder_agent_code}}\\config.cmd remove --token {{az_devops_accesstoken}}"
+  when: old_agent_folder.stat.exists
+  ignore_errors: yes
+
+- name: "Delete Agent Folder if exist"
+  win_file:
+    path: "\\{{az_devops_agent_folder}}\\{{az_devops_folder_agent_code}}\\"
+    state: absent
+  when: old_agent_folder.stat.exists
+
+- name: "Create empty Agent Folder"
+  win_file:
+    path: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}\\{{az_devops_folder_agent_code}}\\"
+    state: directory
+
+- name: Download file from a file path
+  win_get_url:
+    url: "{{ az_devops_agent_url }}"
+    dest: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}\\agent.zip"
+
+- name: Unzip Agent Zip File
+  win_unzip:
+    src: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}\\agent.zip"
+    dest: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}\\{{az_devops_folder_agent_code}}"
+
+- name: Delete Agent Zip File
+  win_file:
+    path: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}\\agent.zip"
+    state: absent
+
+# - name: Printing agent command
+#   debug:
+#     msg: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}\\{{az_devops_folder_agent_code}}\\config.cmd --unattended --auth pat --token {{az_devops_accesstoken}} --deploymentgroup --deploymentgroupname \"{{ az_devops_deployment_group_name }}\" --agent \"{{ansible_env.COMPUTERNAME}}\" --runasservice --work \"_work\" --url \"{{ az_devops_server_url }}\" --collectionname \"DevelopmentCollection\" --projectname \"{{ az_devops_project_name }}\" --addDeploymentGroupTags --deploymentGroupTags \"GST-{{NID}}\""
+
+- name: Run Config Agent Command
+  win_command: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}\\{{az_devops_folder_agent_code}}\\config.cmd --unattended --auth pat --token {{az_devops_accesstoken}} --deploymentgroup --deploymentgroupname \"{{ az_devops_deployment_group_name }}\" --agent \"{{ansible_env.COMPUTERNAME}}\" --runasservice --work \"_work\" --url \"{{ az_devops_server_url }}\" --collectionname \"DevelopmentCollection\" --projectname \"{{ az_devops_project_name }}\" --addDeploymentGroupTags --deploymentGroupTags \"GST-{{NID}}\""
+  register: command_out
+
+
+

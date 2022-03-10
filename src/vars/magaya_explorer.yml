@@ -1,0 +1,5 @@
+---
+magaya_installation_path: "D:\\Program Files (x86)\\Magaya Corp"
+magaya_config_path: "D:\\config"
+magaya_cs_service: "Magaya_CS_Default"
+magaya_database_service: "Magaya_Database_Default"

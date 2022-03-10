@@ -17,11 +17,14 @@
 # WANT_JSON
 # POWERSHELL_COMMON
 
+#Requires -Module Ansible.ModuleUtils.Legacy
+
 $params = Parse-Args $args;
 $result = @{};
 Set-Attr $result "changed" $false;
 
 $name = Get-Attr -obj $params -name name -failifempty $true -emptyattributefailmessage "missing required argument: name"
+$cpu = Get-Attr -obj $params -name cpu -default '1'
 $memory = Get-Attr -obj $params -name memory -default '512MB'
 $hostserver = Get-Attr -obj $params -name hostserver
 $generation = Get-Attr -obj $params -name generation -default 2
@@ -32,94 +35,110 @@ $diskpath = Get-Attr -obj $params -name diskpath -default $null
 $showlog = Get-Attr -obj $params -name showlog -default "false" | ConvertTo-Bool
 $state = Get-Attr -obj $params -name state -default "present"
 
-if ("present","absent","started","stopped" -notcontains $state) {
-    Fail-Json $result "The state: $state doesn't exist; State can only be: present, absent, started or stopped"
+if ("poweroff", "present","absent","started","stopped" -notcontains $state) {
+  Fail-Json $result "The state: $state doesn't exist; State can only be: present, absent, started or stopped"
 }
 
 Function VM-Create {
-    #Check If the VM already exists
-    $CheckVM = Get-VM -name $name -ErrorAction SilentlyContinue
+  #Check If the VM already exists
+  $CheckVM = Get-VM -name $name -ErrorAction SilentlyContinue
 
-    if (!$CheckVM) {
-        $cmd = "New-VM -Name $name"
+  if (!$CheckVM) {
+    $cmd = "New-VM -Name $name"
 
-        if ($memory) {
-            $cmd += " -MemoryStartupBytes $memory"
+    if ($memory) {
+      $cmd += " -MemoryStartupBytes $memory"
+    }
+
+    if ($hostserver) {
+      $cmd += " -ComputerName $hostserver"
+    }
+
+    if ($generation) {
+      $cmd += " -Generation $generation"
+    }
+
+    if ($network_switch) {
+      $cmd += " -SwitchName '$network_switch'"
+    }
+
+    if ($diskpath) {
+      #If VHD already exists then attach it, if not create it
+      if (Test-Path $diskpath) {
+        $cmd += " -VHDPath '$diskpath'"
+        } else {
+          $cmd += " -NewVHDPath '$diskpath'"
         }
+      }
 
-        if ($hostserver) {
-            $cmd += " -ComputerName $hostserver"
-        }
+      # Need to chain these
+      $results = invoke-expression $cmd
+      $results = invoke-expression "Set-VMProcessor $name -Count $cpu"
 
-        if ($generation) {
-            $cmd += " -Generation $generation"
-        }
+      $result.changed = $true
+      } else {
+        $result.changed = $false
+      }
+    }
 
-        if ($network_switch) {
-            $cmd += " -SwitchName $network_switch"
-        }
+    Function VM-Delete {
+      $CheckVM = Get-VM -name $name -ErrorAction SilentlyContinue
 
-        if ($diskpath) {
-            #If VHD already exists then attach it, if not create it
-            if (Test-Path $path) {
-                $cmd += " -VHDPath $diskpath"
-            } else {
-                $cmd += " -NewVHDPath $diskpath"
-            }
-        }
-
+      if ($CheckVM) {
+        $cmd="Remove-VM -Name $name -Force"
         $results = invoke-expression $cmd
         $result.changed = $true
-    } else {
-        $result.changed = $false
-    }
-}
+        } else {
+         $result.changed = $false
+       }
+     }
 
-Function VM-Delete {
-    $CheckVM = Get-VM -name $name -ErrorAction SilentlyContinue
+     Function VM-Start {
+      $CheckVM = Get-VM -name $name -ErrorAction SilentlyContinue
 
-    if ($CheckVM) {
-        $cmd="Remove-VM -Name $name -Force"
-	    $results = invoke-expression $cmd
-	    $result.changed = $true
-	} else {
-	    $result.changed = $false
-	}
-}
-
-Function VM-Start {
-    $CheckVM = Get-VM -name $name -ErrorAction SilentlyContinue
-
-    if ($CheckVM) {
+      if ($CheckVM) {
         $cmd="Start-VM -Name $name"
         $results = invoke-expression $cmd
         $result.changed = $true
-	} else {
-	    Fail-Json $result "The VM: $name; Doesn't exists please create the VM first"
-	}
-}
+        } else {
+         Fail-Json $result "The VM: $name; Doesn't exists please create the VM first"
+       }
+     }
 
-Function VM-Shutdown {
-    $CheckVM = Get-VM -name $name -ErrorAction SilentlyContinue
+     Function VM-Poweroff {
+      $CheckVM = Get-VM -name $name -ErrorAction SilentlyContinue
 
-    if ($CheckVM) {
+      if ($CheckVM) {
+        $cmd="Stop-VM -Name $name -TurnOff"
+        $results = invoke-expression $cmd
+        $result.changed = $true
+        } else {
+         Fail-Json $result "The VM: $name; Doesn't exists please create the VM first"
+       }
+     }
+
+     Function VM-Shutdown {
+      $CheckVM = Get-VM -name $name -ErrorAction SilentlyContinue
+
+      if ($CheckVM) {
         $cmd="Stop-VM -Name $name"
         $results = invoke-expression $cmd
         $result.changed = $true
-	} else {
-	    Fail-Json $result "The VM: $name; Doesn't exists please create the VM first"
-	}
-}
+        } else {
+         Fail-Json $result "The VM: $name; Doesn't exists please create the VM first"
+       }
+     }
 
-Try {
-    switch ($state) {
-		"present" {VM-Create}
-		"absent" {VM-Delete}
-		"started" {VM-Start}
-		"stopped" {VM-Shutdown}
-	}
+     Try {
+      switch ($state) {
+        "present" {VM-Create}
+        "absent" {VM-Delete}
+        "started" {VM-Start}
+        "stopped" {VM-Shutdown}
+        "poweroff" {VM-Poweroff}
+      }
 
-    Exit-Json $result;
-} Catch {
-    Fail-Json $result $_.Exception.Message
-}
+      Exit-Json $result;
+      } Catch {
+        Fail-Json $result $_.Exception.Message
+      }

@@ -1,0 +1,15 @@
+---
+machine_cpu: 2   
+machine_memory: 1024MB
+machine_prifix: "GST"
+machine_name: "{{ machine_prifix }}-{{ NID }}"
+machine_src_vhd: "D:\\Hyper-V\\VM-Template\\VM-TemplateDisk.vhdx"
+machine_dst_vhd: "D:\\Hyper-V\\VirtualHardDisks\\{{ machine_prifix }}-{{ NID }}.vhdx"
+machine_defaut_generation: 2
+machine_network_switch: NAT
+machine_network_ip: 192.168.9.2
+machine_network_netmask: 255.255.255.0
+machine_network_gateway: 192.168.9.255
+machine_network_dns: 192.168.9.1
+
+ansible_port: 5986

@@ -1,0 +1,50 @@
+- name: Include vm env var
+  include_vars:
+    file: "vars/agent_vars.yml"
+
+- name: Printing the environment​ variable in Ansible
+  debug:
+    msg: "{{ansible_env}}"
+
+- name: "Delete Agent Folder if exist"
+  win_file:
+    path: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}"
+    state: absent
+
+- name: "Create empty Agent Folder"
+  win_file:
+    path: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}"
+    state: directory
+
+# - name: Download file from a file path
+#   win_get_url:
+#     url: "{{ az_devops_agent_url }}"
+#     dest: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}\\agent.zip"
+
+- name: Copy Agent Zip File
+  win_copy:
+    src: ../files/agent.zip
+    dest: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}\\agent.zip"
+
+- name: Unzip Agent Zip File
+  win_unzip:
+    src: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}\\agent.zip"
+    dest: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}\\"
+
+- name: Delete Agent Zip File
+  win_file:
+    path: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}\\agent.zip"
+    state: absent
+
+
+- name: Run Config Agent Command
+  win_command: "{{ansible_env.SystemDrive}}\\{{az_devops_agent_folder}}\\config.cmd"
+  args:
+    deploymentgroup: null
+    deploymentgroupname:  "{{ az_devops_deployment_group_name }}"
+    agent: "{{ machine_name }}"
+    runasservice: null
+    work: "_work"
+    url: "{{ az_devops_server_url }}"
+    collectionname: "DevelopmentCollection"
+    projectname: "{{ az_devops_project_name }}"

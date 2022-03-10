@@ -1,0 +1,23 @@
+---
+az_devops_accountname: jcabot@magaya.com
+az_devops_accesstoken: 4si2ow55b5yhlxzqqxdedciehngzakekkk57k53icjl4srsoumhq
+az_devops_agent_url: "https://vstsagentpackage.azureedge.net/agent/2.153.1/vsts-agent-win-x64-2.153.1.zip"
+az_devops_project_name: "Magaya Core Project"
+az_devops_agent_folder: "azagent"
+az_devops_agent_version: 2.153.1
+az_devops_agent_user: "az_devops_agent"
+az_devops_agent_name: "{{ ansible_hostname }}"
+az_devops_agent_replace_existing: true
+az_devops_agent_user_capabilties: null
+az_devops_server_url: "https://devops.magaya.com/tfs/"
+az_devops_work_folder: "{{ansible_env.SystemDrive}}\\{{ az_devops_agent_user }}/agent/_work"
+az_devops_folder_agent_code: "A1"
+az_devops_agent_pool_name: "Default"
+az_devops_agent_role: "build"
+az_devops_deployment_group_tags: null
+az_devops_deployment_group_name: "Onboarding Test"
+az_devops_reconfigure_agent: false
+az_devops_proxy_url: null
+az_devops_proxy_username: null
+az_devops_proxy_password: null
+az_devops_environment_name: null

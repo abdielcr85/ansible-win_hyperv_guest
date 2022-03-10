@@ -1,0 +1,32 @@
+#C:\Program Files (x86)\Magaya Corp
+- name: Include Magaya Explorer env var
+  include_vars:
+    file: "vars/magaya_explorer.yml"
+
+- name: Stop Magaya Communication Suite service
+  win_service:
+    name: "{{magaya_cs_service}}"
+    state: stopped
+    
+- name: Stop Magaya Database service
+  win_service:
+    name: "{{magaya_cs_service}}"
+    state: stopped
+
+- name: Printing the environment​ variable in Ansible
+  debug:
+    msg: "{{magaya_installation_path}}"
+
+- name: "Delete Magaya Explorer Folder if exist"
+  win_file:
+    path: "{{magaya_installation_path}}"
+    state: absent
+
+- name: Printing the environment​ variable in Ansible
+  debug:
+    msg: "{{magaya_config_path}}"
+
+- name: "Delete Magaya Config Folder if exist"
+  win_file:
+    path: "{{magaya_config_path}}"
+    state: absent

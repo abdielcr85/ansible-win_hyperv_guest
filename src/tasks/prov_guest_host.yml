@@ -1,0 +1,12 @@
+---
+- name: Include vm env var
+  include_vars:
+    file: "vars/main.yml"
+
+- name: Rename New Virtual Machine 
+  win_hostname:
+    name: "{{machine_name}}"
+  register: machine_name
+
+- name: Reboot the machine {{machine_name}}
+  win_reboot:

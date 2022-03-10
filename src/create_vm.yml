@@ -3,16 +3,13 @@
 # On ansible machine run: pip install pywinrm
 - name: Manage Hyper-V
   hosts:
-    - yourservername
+    - hyper_v_server
   tasks:
-    - name: Create test.example.com VM
-      win_hyperv_guest:
-        name: test.example.com
-        generation: 1
-        memory: 256MB
-        network_switch: WAN1
-        state: present
-    - name: Remove old.example.com VM
-      win_hyperv_guest:
-        name: old.example.com
-        state: absent
+    - import_tasks: tasks/prov_hyperv_vm.yml 
+
+- name: Proviones OS Guest VM
+  hosts:
+    - virtual_clients
+  tasks:
+    - import_tasks: tasks/prov_guest_host.yml
+    - import_tasks: tasks/prov_devops_agent.yml

@@ -1,0 +1,86 @@
+---
+- name: Include vm env var
+  include_vars:
+    file: "vars/main.yml"
+
+- name: Check whether source vhdx already exists
+  win_stat:
+    path: "{{machine_src_vhd}}"
+    get_checksum: false
+  register: src_file_info
+
+- name: Check whether destination vhdx already exists
+  win_stat:
+    path: "{{machine_dst_vhd}}"
+    get_checksum: false
+  register: dst_file_info
+
+- name: "Power Off  {{ machine_prifix }}-{{ NID }} VM"
+  win_hyperv_guest:
+      name: "{{ machine_prifix }}-{{ NID }}"
+      state: poweroff
+  when: dst_file_info.stat.exists == true
+  ignore_errors: yes 
+
+- name: "Remove {{ machine_prifix }}-{{ NID }} VM"
+  win_hyperv_guest:
+      name: "{{ machine_prifix }}-{{ NID }}"
+      state: absent
+  when: dst_file_info.stat.exists == true
+  ignore_errors: yes
+
+- name: "Remove {{ machine_prifix }}-{{ NID }}} VM Disk File"
+  win_file:
+      name: "{{machine_dst_vhd}}"
+      state: absent
+  when: dst_file_info.stat.exists == true
+  ignore_errors: yes  
+
+- name: Clone vhdx 
+  win_copy:
+    src: "{{machine_src_vhd}}"
+    dest: "{{machine_dst_vhd}}"
+    remote_src: True
+
+- debug: var=machine_dst_vhd
+
+- name: Create VMs
+  win_hyperv_guest:
+    name: "{{ machine_prifix }}-{{ NID }}"
+    generation: "{{machine_defaut_generation}}"
+    cpu: "{{machine_cpu}}"
+    memory: "{{machine_memory}}"
+    network_switch: "{{machine_network_switch}}"
+    diskpath: "{{machine_dst_vhd}}"
+    state: present
+  register: new_vms
+
+- debug: var=new_vms.results
+
+- name: Configure VMs IP
+  win_hyperv_guest_config_net:
+    name: "{{machine_name}}"
+    ip: "{{machine_network_ip}}" 
+    netmask: "{{machine_network_netmask}}"
+    gateway: "{{machine_network_gateway}}"
+    dns: "{{machine_network_dns}}"
+    type: static
+
+- debug: var=new_vms.results
+
+- add_host:
+    name: "{{ machine_network_ip }}"
+    groups: "virtual_clients" 
+
+- name: PowerOn {{machine_name}} VMs
+  win_hyperv_guest:
+    name: "{{machine_name}}"
+    state: started 
+
+# wait_for_connection, needs to be in another play because 
+# it uses the current inventory in this play
+- name: Wait for VM to be running
+  win_wait_for:
+    host: "{{ machine_network_ip }}"
+    port: "{{ ansible_port }}" 
+    timeout: 300

@@ -1,0 +1,10 @@
+---
+# On target machine run: https://github.com/ansible/ansible/blob/devel/examples/scripts/ConfigureRemotingForAnsible.ps1
+# On ansible machine run: pip install pywinrm
+- name: Azure Devops Agent Install
+  hosts:
+    - qa_machine
+  tasks:
+    - import_tasks: tasks/prov_devops_agent_only.yml
+    - import_tasks: tasks/prov_magaya_explorer_decommission.yml
+  
